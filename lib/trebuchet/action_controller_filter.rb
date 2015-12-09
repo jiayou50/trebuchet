@@ -1,5 +1,12 @@
 class Trebuchet::ActionControllerFilter
 
+  def self.on_before(callback)
+    return unless callback.is_a?(Proc)
+
+    @on_before_callbacks ||= []
+    @on_before_callbacks << callback
+  end
+
   def self.before(controller)
     Trebuchet.initialize_logs
 
@@ -20,6 +27,10 @@ class Trebuchet::ActionControllerFilter
         Trebuchet.backend.respond_to?(:refresh)
        )
        Trebuchet.backend.refresh
+    end
+
+    (@on_before_callbacks || []).each do |callback|
+      callback.call rescue nil
     end
 
     Trebuchet.current_block = Proc.new {
